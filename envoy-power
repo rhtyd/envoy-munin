@@ -23,28 +23,29 @@
 # Author: Rohit Yadav <rohit@yadav.cloud>
 
 get_config() {
-    echo "graph_title Envoy 3-Phase Load Vrms"
+    echo "graph_title Envoy Power (Watt)"
     echo "graph_category envoy"
     echo "update_rate 30"
-    echo "L1Vrms.critical 265"
-    echo "L2Vrms.critical 265"
-    echo "L3Vrms.critical 265"
-    echo "L1Vrms.label L1(A) Load Vrms"
-    echo "L2Vrms.label L2(B) Load Vrms"
-    echo "L3Vrms.label L3(C) Load Vrms"
+    echo "ptotal.label Production Total W"
+    echo "ctotal.label Consumption Total W"
+    echo "c1.label Consumption L1 (A) W"
+    echo "c2.label Consumption L2 (B) W"
+    echo "c3.label Consumption L3 (C) W"
 }
 
 get_values() {
     data=$(curl http://envoy.local/production.json?details=1 2>/dev/null)
+    printf "ptotal.value %s\n" $(echo $data | jq '.production|.[1].wNow')
+    printf "ctotal.value %s\n" $(echo $data | jq '.consumption|.[0].wNow')
     COUNTER=1
-    for line in $(echo $data | jq '.consumption | .[0] | .lines | .[] | .rmsVoltage'); do
-	printf "L%dVrms.value %s\n" $COUNTER $line
+    for line in $(echo $data | jq '.consumption|.[0].lines|.[].wNow'); do
+        printf "c%d.value %s\n" $COUNTER $line
         COUNTER=$((COUNTER+1))
     done
 }
 
 usage() {
-    printf >&2 "%s - munin plugin to graph the load VRMS\n" ${0##*/}
+    printf >&2 "%s - munin plugin to graph power stats\n" ${0##*/}
     printf >&2 "Usage: %s [config]\n" ${0##*/}
 }
 
