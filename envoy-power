@@ -25,17 +25,25 @@
 get_config() {
     echo "graph_title Envoy Power (Watt)"
     echo "graph_category envoy"
-    echo "update_rate 30"
+    echo "update_rate 10"
     echo "ptotal.label Production Total W"
+    echo "p1.label Production L1(A) W"
+    echo "p2.label Production L2(B) W"
+    echo "p3.label Production L3(C) W"
     echo "ctotal.label Consumption Total W"
-    echo "c1.label Consumption L1 (A) W"
-    echo "c2.label Consumption L2 (B) W"
-    echo "c3.label Consumption L3 (C) W"
+    echo "c1.label Consumption L1(A) W"
+    echo "c2.label Consumption L2(B) W"
+    echo "c3.label Consumption L3(C) W"
 }
 
 get_values() {
     data=$(curl http://envoy.local/production.json?details=1 2>/dev/null)
     printf "ptotal.value %s\n" $(echo $data | jq '.production|.[1].wNow')
+    COUNTER=1
+    for line in $(echo $data | jq '.production|.[1].lines|.[].wNow'); do
+        printf "p%d.value %s\n" $COUNTER $line
+        COUNTER=$((COUNTER+1))
+    done
     printf "ctotal.value %s\n" $(echo $data | jq '.consumption|.[0].wNow')
     COUNTER=1
     for line in $(echo $data | jq '.consumption|.[0].lines|.[].wNow'); do

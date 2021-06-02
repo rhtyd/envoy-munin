@@ -25,7 +25,7 @@
 get_config() {
     echo "graph_title Envoy 3-Phase Load Vrms"
     echo "graph_category envoy"
-    echo "update_rate 30"
+    echo "update_rate 10"
     echo "L1Vrms.critical 265"
     echo "L2Vrms.critical 265"
     echo "L3Vrms.critical 265"
