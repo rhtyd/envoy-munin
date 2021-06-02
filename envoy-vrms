@@ -1,0 +1,70 @@
+#!/bin/bash
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+# Usage:
+# Users should ensure envoy.local resolves to their IQ Envoy
+# Or they may add an entry in /etc/hosts
+# Requirements: curl and jq installed
+# Author: Rohit Yadav <rohit@yadav.cloud>
+
+get_config() {
+    echo "graph_title Envoy 3-Phase Load Vrms"
+    echo "graph_category envoy"
+    echo "update_rate 30"
+    echo "L1Vrms.critical 265"
+    echo "L2Vrms.critical 265"
+    echo "L3Vrms.critical 265"
+    echo "L1Vrms.label L1(A) Load Vrms"
+    echo "L2Vrms.label L2(A) Load Vrms"
+    echo "L3Vrms.label L3(A) Load Vrms"
+}
+
+get_values() {
+    data=$(curl http://envoy.local/production.json?details=1 2>/dev/null)
+    COUNTER=1
+    for line in $(echo $data | jq '.consumption | .[0] | .lines | .[] | .rmsVoltage'); do
+	printf "L%dVrms.value %s\n" $COUNTER $line
+        COUNTER=$((COUNTER+1))
+    done
+}
+
+usage() {
+    printf >&2 "%s - munin plugin to graph the load VRMS\n" ${0##*/}
+    printf >&2 "Usage: %s [config]\n" ${0##*/}
+}
+
+case $# in
+    0)
+        get_values
+        ;;
+    1)
+        case $1 in
+            config)
+                get_config
+                ;;
+            *)
+                usage
+                exit 1
+                ;;
+        esac
+        ;;
+    *)
+        usage
+        exit 1
+        ;;
+esac
